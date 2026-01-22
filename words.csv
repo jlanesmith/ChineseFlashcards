@@ -1,0 +1,183 @@
+pinyin,meaning,tone,group,character
+yī,1,1st,1,一
+èr,2,4th,1,二
+sān,3,1st,1,三
+sì,4,4th,1,四
+wǔ,5,3rd,1,五
+liù,6,4th,1,六
+qī,7,1st,1,七
+bā,8,1st,1,八
+jiǔ,9,3rd,1,九
+shí,10,2nd,1,十
+jǐ,how many,3rd,1,几
+kǒu,mouth,3rd,1,口
+xiǎo,small,3rd,1,小
+jiàn,see,4th,1,见
+shān,mountain,1st,1,山
+bù,no,4th,1,不
+yuè,moon,4th,1,月
+xīn,heart,1st,1,心
+zhōngguó,China,1st-2nd,1,中国
+rén,people,2nd,1,人
+érzi,son,2nd-3rd,1,儿子
+nǚér,daughter,3rd-2nd,1,女儿
+shuǐ,water,3rd,1,水
+le,change in status,neutral,1,了
+dà,big,4th,1,大
+dōng,east,1st,1,东
+xī,west,1st,1,西
+wǒ,I,3rd,1,我
+shǎo,a few,3rd,1,少
+gè,measuring word,4th,1,个
+zài,in,4th,2,在
+shàng,on,4th,2,上
+xià,below,4th,2,下
+wǔ,noon,3rd,2,午
+shénme,what,2nd-neutral,2,什么
+qù,go,4th,2,去
+jīntiān,today,1st-1st,2,今天
+zuótiān,yesterday,2nd-1st,2,昨天
+kàn,see/read,4th,2,看
+jiào,call,4th,2,叫
+huì,can,4th,2,会
+duō,many,1st,2,多
+de,of,neutral,2,的
+hǎo,good,3rd,2,好
+shū,book,1st,2,书
+tā,he/him,1st,2,他
+nǐ,you,3rd,3,你
+tā,she/her,1st,3,她
+men,plural pronoun,neutral,3,们
+gōngzuò,work,1st-4th,3,工作
+méi,not,2nd,3,没
+lǎoshī,teacher,3rd-1st,3,老师
+míngzi,name,2nd-4th,3,名字
+tóngxué,classmate,2nd-2nd,3,同学
+xuéshēng,student,2nd-1st,3,学生
+hànyǔ,Chinese language,4th-3rd,3,汉语
+péngyǒu,friend,2nd-3rd,3,朋友
+nǎ,which?,3rd,3,哪
+yǒu,to have,3rd,3,有
+suì,years old,4th,3,岁
+nián,year,2nd,3,年
+zuò,to make,4th,3,做
+běn,root/measure word for books,3rd,4,本
+mò,end,4th,4,末
+zuò,sit,4th,4,坐
+zhè,this,4th,4,这
+guó,country,2nd,4,国
+zhuōzi,table,1st-neutral,4,桌子
+yǐzi,chair,3rd-neutral,4,椅子
+bēizi,cup,1st-neutral,4,杯子
+lǐ,inside,3rd,4,里
+miàn,side/surface,4th,4,面
+qiánmiàn,in front,2nd-4th,4,前面
+hòumiàn,behind,4th-4th,4,后面
+hé,and,2nd,4,和
+jiā,home,1st,5,家
+qǐng,please,3rd,5,请
+néng,can,2nd,5,能
+māo,cat,1st,5,猫
+gǒu,dog,3rd,5,狗
+nà,that,4th,5,那
+bùkèqi,you're welcome,4th-4th-4th,5,不客气
+dú,to read,2nd,5,读
+xuéxí,to study,2nd-2nd,5,学习
+shì,is,4th,5,是
+diànnǎo,computer,4th-3rd,5,电脑
+xuéxiào,school,2nd-4th,5,学校
+māma,mother,1st-1st,5,妈妈
+bàba,father,4th-4th,5,爸爸
+qián,money,2nd,5,钱
+xīngqī,week,1st-1st,5,星期
+míngtiān,tomorrow,2nd-1st,5,明天
+xiànzài,now,4th-4th,5,现在
+diǎn,o'clock,3rd,5,点
+liǎng,two,3rd,5,两
+hào,day (of month),4th,6,号
+mǎi,buy,3rd,6,买
+xiě,write,3rd,6,写
+ma,question particle,neutral,6,吗
+chī,eat,1st,6,吃
+fàn,meal,4th,6,饭
+huí,to return,2nd,6,回
+mǐ,rice,3rd,6,米
+shéi,who,2nd,6,谁
+xiè,thank,4th,6,谢
+shuō,speak,1st,6,说
+diànhuà,telephone,4th-4th,6,电话
+zhù,to live,4th,6,住
+fēn,minute,1st,6,分
+tài,too much,4th,6,太
+zěnmeyàng,how about it,3rd-neutral-4th,6,怎么样
+shēntǐ,body,1st-3rd,6,身体
+ài,to love,4th,6,爱
+xiē,a few,1st,6,些
+guǒ,fruit,3rd,6,果
+yǔ,rain,3rd,6,雨
+lěng,cold,3rd,6,冷
+rè,hot,4th,6,热
+lái,come,2nd,6,来
+jiějie,older sister,3rd-3rd,6,姐姐
+zhī,only,1st,7,只
+chá,tea,2nd,7,茶
+cài,food dish,4th,7,菜
+diànyǐng,movie,4th-3rd,7,电影
+diànshì,TV,4th-4th,7,电视
+hē,to drink,1st,7,喝
+hěn,very,3rd,7,很
+kuài,money unit,4th,7,块
+duìbuqǐ,sorry,4th-4th-3rd,7,对不起
+ne,and you?,neutral,7,呢
+méiguānxi,no worries,2nd-1st-4th,7,没关系
+mù,eye,4th,7,目
+yě,also,3rd,7,也
+shíhou,time (duration),2nd-4th,7,时候
+shuìjiào,to sleep,4th-4th,7,睡觉
+dǎ,to hit/make (a call),3rd,7,打
+gěi,to give,3rd,7,给
+wèi,hello (phone),4th,7,喂
+xiǎng,would like to,3rd,8,想
+zàijiàn,goodbye,4th-4th,8,再见
+kùn,sleepy,4th,8,困
+wèn,ask,4th,8,问
+shíjiān,time (point),2nd-1st,8,时间
+fángjiān,room,2nd-1st,8,房间
+yīyuàn,hospital,1st-4th,8,医院
+shāngdiàn,store,1st-4th,8,商店
+kāichē,to drive,1st-1st,8,开车
+fēijī,airplane,1st-1st,9,飞机
+lǚyóu,trip/travel,3rd-2nd,9,旅游
+juéde,to think/feel,2nd-neutral,9,觉得
+zuì,most,4th,9,最
+wèishénme,why,2nd-2nd-neutral,9,为什么
+yùndòng,sport/exercise,4th-4th,9,运动
+tīzúqiú,to play soccer,1st-2nd-2nd,9,踢足球
+yào,to want/ask,4th,9,要
+xīn,new,1st,9,新
+tā,it,1st,9,它
+yǎnjīng,eye,3rd-1st,9,眼睛
+shēngbìng,to get sick,1st-4th,10,生病
+měi,every,3rd,10,每
+zǎoshang,morning,3rd-4th,10,早上
+pǎobù,to run,3rd-4th,10,跑步
+qǐchuáng,to get up,3rd-2nd,10,起床
+chīyào,to take medicine,1st-4th,10,吃药
+chūyuàn,to leave hospital,1st-4th,10,出院
+gāo,tall,1st,10,高
+zhīdào,to know,1st-4th,10,知道
+xiūxi,to rest,1st-neutral,10,休息
+máng,busy,2nd,10,忙
+zuǒ,left,3rd,11,左
+yòu,right,4th,11,右
+pángbiān,beside,2nd-1st,11,旁边
+shǒubiǎo,wrist watch,3rd-3rd,11,手表
+bàozhǐ,newspaper,4th-3rd,11,报纸
+niúnǎi,cow milk,2nd-3rd,11,牛奶
+yánsè,colour,2nd-4th,11,颜色
+hóng,red,2nd,11,红
+fěn,white/pink,3rd,11,粉
+zhàngfu,husband,4th-neutral,11,丈夫
+qiān,thousand,1st,11,千
+sòng,give/deliver,4th,11,送
+zhēn,really,1st,11,真
