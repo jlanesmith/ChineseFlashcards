@@ -5,7 +5,9 @@
       "Bash(python3:*)",
       "Bash(echo:*)",
       "Bash(ls:*)",
-      "Bash(printenv:*)"
+      "Bash(printenv:*)",
+      "Bash(xxd:*)",
+      "Bash(curl:*)"
     ]
   }
 }

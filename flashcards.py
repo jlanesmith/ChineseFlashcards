@@ -350,7 +350,8 @@ def create_character_image(char, size=300):
     # Try to find a good font for Chinese characters
     font = None
     font_paths = [
-        # macOS fonts
+        # macOS fonts - Songti renders strokes correctly (dot vs horizontal) and has full SC support
+        '/System/Library/Fonts/Supplemental/Songti.ttc',
         '/System/Library/Fonts/PingFang.ttc',
         '/System/Library/Fonts/STHeiti Light.ttc',
         '/System/Library/Fonts/Hiragino Sans GB.ttc',
@@ -498,11 +499,13 @@ def display_menu(groups, has_results):
         print(f"║{pad(line)}║")
 
     print(f"║{pad('      [ 0] All groups')}║")
+    print(f"║{pad('      [1 2 3] Multiple groups (space-separated)')}║")
     print(f"║{' ' * W}║")
 
     print(f"║{pad('  📖 PRACTICE (in order, not recorded):')}║")
     print(f"║{pad('      [ p] Practice all groups')}║")
     print(f"║{pad('      [pN] Practice group N (e.g., p3)')}║")
+    print(f"║{pad('      [p 1 2 3] Practice multiple groups')}║")
     pd_text = "      [pd] Practice today's mistakes"
     pw_text = "      [pw] Practice this week's mistakes"
     pm_text = "      [pm] Practice this month's mistakes"
@@ -531,6 +534,38 @@ def display_menu(groups, has_results):
     return input("Enter choice: ").strip().lower()
 
 
+def display_paused_screen(practice_mode=False, correct_count=0, incorrect_count=0, remaining=0, current_num=0, total_num=0):
+    """Display pause screen."""
+    clear_screen()
+
+    YELLOW = '\033[93m'
+    CYAN = '\033[96m'
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    RESET = '\033[0m'
+
+    # Status line
+    if practice_mode:
+        print(f"  {CYAN}📖 PRACTICE MODE{RESET}  │  Card {current_num} of {total_num}")
+    else:
+        print(f"  {GREEN}✓ {correct_count}{RESET}  {RED}✗ {incorrect_count}{RESET}  │  Remaining: {remaining}")
+    print("  " + "─" * 50)
+    print()
+
+    print()
+    print(f"  {BOLD}╔══════════════════════════════════════════════╗{RESET}")
+    print(f"  {BOLD}║{RESET}                                              {BOLD}║{RESET}")
+    print(f"  {BOLD}║{RESET}          {YELLOW}⏸  SESSION PAUSED  ⏸{RESET}            {BOLD}║{RESET}")
+    print(f"  {BOLD}║{RESET}                                              {BOLD}║{RESET}")
+    print(f"  {BOLD}║{RESET}     Timer is paused. Take your time!        {BOLD}║{RESET}")
+    print(f"  {BOLD}║{RESET}                                              {BOLD}║{RESET}")
+    print(f"  {BOLD}╚══════════════════════════════════════════════╝{RESET}")
+    print()
+    print(f"  {YELLOW}[P]{RESET} Resume   [quit] Quit")
+    print()
+
+
 def display_card(word, show_answer, correct_count, incorrect_count, remaining, practice_mode=False, current_num=0, total_num=0):
     """Display a flashcard."""
     clear_screen()
@@ -538,6 +573,7 @@ def display_card(word, show_answer, correct_count, incorrect_count, remaining, p
     GREEN = '\033[92m'
     RED = '\033[91m'
     CYAN = '\033[96m'
+    YELLOW = '\033[93m'
     RESET = '\033[0m'
     BOLD = '\033[1m'
 
@@ -569,11 +605,11 @@ def display_card(word, show_answer, correct_count, incorrect_count, remaining, p
         display_huge_character(word['character'])
         if practice_mode:
             if current_num > 1:
-                print(f"  {GREEN}[SPACE]{RESET} Next   {CYAN}[B]{RESET} Back   [quit] Quit")
+                print(f"  {GREEN}[SPACE]{RESET} Next   {CYAN}[B]{RESET} Back   {YELLOW}[P]{RESET} Pause   [quit] Quit")
             else:
-                print(f"  {GREEN}[SPACE]{RESET} Next   [quit] Quit")
+                print(f"  {GREEN}[SPACE]{RESET} Next   {YELLOW}[P]{RESET} Pause   [quit] Quit")
         else:
-            print(f"  {GREEN}[SPACE]{RESET} Correct   {RED}[X]{RESET} Incorrect   [quit] Quit")
+            print(f"  {GREEN}[SPACE]{RESET} Correct   {RED}[X]{RESET} Incorrect   {YELLOW}[P]{RESET} Pause   [quit] Quit")
     else:
         print()
         print("  ┌────────────────────────────────────────────────┐")
@@ -582,7 +618,7 @@ def display_card(word, show_answer, correct_count, incorrect_count, remaining, p
         print("  │                                                │")
         print("  └────────────────────────────────────────────────┘")
         print()
-        print("  [SPACE] Reveal answer")
+        print(f"  [SPACE] Reveal answer   {YELLOW}[P]{RESET} Pause")
 
 
 def calculate_stats(results, words):
@@ -1060,80 +1096,123 @@ def run_practice(words, selected_groups, results_path, mistake_mode=None, all_re
     # Sort by group, then by order in file (don't shuffle)
     practice_words.sort(key=lambda w: (w['group'], words.index(w)))
 
-    # Track time
+    # Track time and pause state
     start_time = datetime.now()
     session_id = start_time.strftime("%Y%m%d_%H%M%S")
     total_words = len(practice_words)
+    total_paused_time = 0.0  # Total time spent paused (in seconds)
 
-    # Navigation with back support
-    i = 0
-    while i < total_words:
-        word = practice_words[i]
-        current_num = i + 1
-
-        # Show question (hidden answer)
-        display_card(word, False, 0, 0, 0, practice_mode=True, current_num=current_num, total_num=total_words)
-        debug_log(f"run_practice() showing card {current_num} of {total_words}")
+    def handle_pause(current_num):
+        """Handle pause state and return time spent paused."""
+        nonlocal total_paused_time
+        pause_start = datetime.now()
+        debug_log("Entering pause state")
 
         while True:
+            display_paused_screen(practice_mode=True, current_num=current_num, total_num=total_words)
             key = get_key()
-            debug_log(f"run_practice() question loop got key: {repr(key)}")
+            debug_log(f"Pause screen got key: {repr(key)}")
+
             if key is None:
-                continue  # Ignore escape sequences
-            if key == ' ':
-                break
-            elif key.lower() == 'b' and i > 0:
-                # Go back to previous card
-                i -= 1
-                debug_log(f"run_practice() going back to card {i}")
-                break
+                continue
+            if key.lower() == 'p':
+                # Resume - calculate paused time
+                pause_duration = (datetime.now() - pause_start).total_seconds()
+                total_paused_time += pause_duration
+                debug_log(f"Resuming - paused for {pause_duration:.1f}s, total paused: {total_paused_time:.1f}s")
+                return
             elif check_for_quit(key):
-                debug_log("run_practice() QUITTING from question loop")
-                # Save practice time before quitting
-                duration = (datetime.now() - start_time).total_seconds()
+                # User quit during pause
+                pause_duration = (datetime.now() - pause_start).total_seconds()
+                total_paused_time += pause_duration
+                duration = (datetime.now() - start_time).total_seconds() - total_paused_time
                 save_practice_time(results_path, session_id, duration, selected_groups)
                 clear_screen()
                 print(f"\n  Practice session ended after viewing {current_num - 1} of {total_words} cards.")
                 print(f"  Time spent: {format_duration(duration)}")
                 print()
                 input("  Press Enter to continue...")
-                return
+                raise SystemExit()  # Exit to break out of nested loops
 
-        # If we went back, continue to show the previous card
-        if i < current_num - 1:
-            continue
+    # Navigation with back support
+    i = 0
+    try:
+        while i < total_words:
+            word = practice_words[i]
+            current_num = i + 1
 
-        # Show answer
-        display_card(word, True, 0, 0, 0, practice_mode=True, current_num=current_num, total_num=total_words)
-        debug_log(f"run_practice() showing answer for card {current_num}")
+                # Show question (hidden answer)
+            display_card(word, False, 0, 0, 0, practice_mode=True, current_num=current_num, total_num=total_words)
+            debug_log(f"run_practice() showing card {current_num} of {total_words}")
 
-        while True:
-            key = get_key()
-            debug_log(f"run_practice() answer loop got key: {repr(key)}")
-            if key is None:
-                continue  # Ignore escape sequences
-            if key == ' ':
-                i += 1  # Move to next card
-                break
-            elif key.lower() == 'b' and i > 0:
-                # Go back to previous card
-                i -= 1
-                debug_log(f"run_practice() going back to card {i}")
-                break
-            elif check_for_quit(key):
-                debug_log("run_practice() QUITTING from answer loop")
-                # Save practice time before quitting
-                duration = (datetime.now() - start_time).total_seconds()
-                save_practice_time(results_path, session_id, duration, selected_groups)
-                clear_screen()
-                print(f"\n  Practice session ended after viewing {current_num} of {total_words} cards.")
-                print(f"  Time spent: {format_duration(duration)}")
-                print()
-                input("  Press Enter to continue...")
-                return
+            while True:
+                key = get_key()
+                debug_log(f"run_practice() question loop got key: {repr(key)}")
+                if key is None:
+                    continue  # Ignore escape sequences
+                if key == ' ':
+                    break
+                elif key.lower() == 'p':
+                    handle_pause(current_num)
+                    display_card(word, False, 0, 0, 0, practice_mode=True, current_num=current_num, total_num=total_words)
+                elif key.lower() == 'b' and i > 0:
+                    # Go back to previous card
+                    i -= 1
+                    debug_log(f"run_practice() going back to card {i}")
+                    break
+                elif check_for_quit(key):
+                    debug_log("run_practice() QUITTING from question loop")
+                    # Save practice time before quitting
+                    duration = (datetime.now() - start_time).total_seconds() - total_paused_time
+                    save_practice_time(results_path, session_id, duration, selected_groups)
+                    clear_screen()
+                    print(f"\n  Practice session ended after viewing {current_num - 1} of {total_words} cards.")
+                    print(f"  Time spent: {format_duration(duration)}")
+                    print()
+                    input("  Press Enter to continue...")
+                    return
+
+            # If we went back, continue to show the previous card
+            if i < current_num - 1:
+                continue
+
+            # Show answer
+            display_card(word, True, 0, 0, 0, practice_mode=True, current_num=current_num, total_num=total_words)
+            debug_log(f"run_practice() showing answer for card {current_num}")
+
+            while True:
+                key = get_key()
+                debug_log(f"run_practice() answer loop got key: {repr(key)}")
+                if key is None:
+                    continue  # Ignore escape sequences
+                if key == ' ':
+                    i += 1  # Move to next card
+                    break
+                elif key.lower() == 'p':
+                    handle_pause(current_num)
+                    display_card(word, True, 0, 0, 0, practice_mode=True, current_num=current_num, total_num=total_words)
+                elif key.lower() == 'b' and i > 0:
+                    # Go back to previous card
+                    i -= 1
+                    debug_log(f"run_practice() going back to card {i}")
+                    break
+                elif check_for_quit(key):
+                    debug_log("run_practice() QUITTING from answer loop")
+                    # Save practice time before quitting
+                    duration = (datetime.now() - start_time).total_seconds() - total_paused_time
+                    save_practice_time(results_path, session_id, duration, selected_groups)
+                    clear_screen()
+                    print(f"\n  Practice session ended after viewing {current_num} of {total_words} cards.")
+                    print(f"  Time spent: {format_duration(duration)}")
+                    print()
+                    input("  Press Enter to continue...")
+                    return
+    except SystemExit:
+        # Clean exit from pause handler
+        return
 
     # Practice complete
-    duration = (datetime.now() - start_time).total_seconds()
+    duration = (datetime.now() - start_time).total_seconds() - total_paused_time
     save_practice_time(results_path, session_id, duration, selected_groups)
 
     clear_screen()
@@ -1181,8 +1260,37 @@ def run_quiz(words, selected_groups, results_path, mistake_mode=None, all_result
 
     # Session tracking
     session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+    start_time = datetime.now()
     correct_count = 0
     incorrect_count = 0
+    total_paused_time = 0.0  # Total time spent paused (in seconds)
+
+    def handle_pause():
+        """Handle pause state."""
+        nonlocal total_paused_time
+        pause_start = datetime.now()
+        debug_log("Entering pause state (quiz)")
+
+        while True:
+            display_paused_screen(practice_mode=False, correct_count=correct_count,
+                                incorrect_count=incorrect_count, remaining=calc_remaining())
+            key = get_key()
+            debug_log(f"Pause screen (quiz) got key: {repr(key)}")
+
+            if key is None:
+                continue
+            if key.lower() == 'p':
+                # Resume - calculate paused time
+                pause_duration = (datetime.now() - pause_start).total_seconds()
+                total_paused_time += pause_duration
+                debug_log(f"Resuming (quiz) - paused for {pause_duration:.1f}s, total paused: {total_paused_time:.1f}s")
+                return
+            elif check_for_quit(key):
+                # User quit during pause
+                pause_duration = (datetime.now() - pause_start).total_seconds()
+                total_paused_time += pause_duration
+                show_final_score(correct_count, incorrect_count)
+                raise SystemExit()  # Exit to break out of nested loops
 
     # Queue: list of (word, times_correct_needed)
     queue = [(w, 0) for w in quiz_words]
@@ -1190,74 +1298,35 @@ def run_quiz(words, selected_groups, results_path, mistake_mode=None, all_result
     # Track words that need repetition
     repeat_words = {}
 
+    def calc_remaining():
+        """Calculate total remaining including repeat words."""
+        # Count queue items (each needs at least 1 correct)
+        queue_count = sum(max(1, needed) for _, needed in queue)
+        # Count pending repeats (need 'streak' more correct answers each)
+        repeat_count = sum(streak for _, streak, _ in repeat_words.values())
+        return queue_count + repeat_count
+
     position = 0
 
-    while queue:
-        word, needed_correct = queue.pop(0)
-        remaining = len(queue) + 1
+    try:
+        while queue:
+            word, needed_correct = queue.pop(0)
+            remaining = calc_remaining() + max(1, needed_correct)
 
-        # Add any repeat words that are due
-        words_to_insert = []
-        for pinyin, (rw, streak_needed, insert_pos) in list(repeat_words.items()):
-            if position >= insert_pos:
-                words_to_insert.append((rw, streak_needed))
-                del repeat_words[pinyin]
+            # Add any repeat words that are due
+            words_to_insert = []
+            for pinyin, (rw, streak_needed, insert_pos) in list(repeat_words.items()):
+                if position >= insert_pos:
+                    words_to_insert.append((rw, streak_needed))
+                    del repeat_words[pinyin]
 
-        for rw, streak in words_to_insert:
-            insert_idx = random.randint(0, min(3, len(queue)))
-            queue.insert(insert_idx, (rw, streak))
+            for rw, streak in words_to_insert:
+                insert_idx = random.randint(0, min(3, len(queue)))
+                queue.insert(insert_idx, (rw, streak))
 
-        remaining = len(queue) + 1
+            remaining = calc_remaining() + max(1, needed_correct)
 
-        # Show question
-        display_card(word, False, correct_count, incorrect_count, remaining)
-
-        while True:
-            key = get_key()
-            if key is None:
-                continue  # Ignore escape sequences
-            if key == ' ':
-                break
-            elif check_for_quit(key):
-                show_final_score(correct_count, incorrect_count)
-                return
-
-        # Show answer
-        display_card(word, True, correct_count, incorrect_count, remaining)
-
-        while True:
-            key = get_key()
-            if key is None:
-                continue  # Ignore escape sequences
-            if key == ' ':
-                correct_count += 1
-                save_result(results_path, word, True, session_id, selected_groups)
-
-                if needed_correct > 1:
-                    insert_pos = position + random.randint(5, 10)
-                    repeat_words[word['pinyin']] = (word, needed_correct - 1, insert_pos)
-                break
-            elif key.lower() == 'x':
-                incorrect_count += 1
-                save_result(results_path, word, False, session_id, selected_groups)
-
-                insert_pos = position + random.randint(5, 10)
-                repeat_words[word['pinyin']] = (word, 2, insert_pos)
-                break
-            elif check_for_quit(key):
-                show_final_score(correct_count, incorrect_count)
-                return
-
-        position += 1
-
-    # Process remaining repeat words
-    while repeat_words:
-        pending = [(w, streak) for w, streak, _ in repeat_words.values()]
-        repeat_words.clear()
-
-        for word, streak_needed in pending:
-            remaining = len(pending)
-
+            # Show question
             display_card(word, False, correct_count, incorrect_count, remaining)
 
             while True:
@@ -1266,10 +1335,14 @@ def run_quiz(words, selected_groups, results_path, mistake_mode=None, all_result
                     continue  # Ignore escape sequences
                 if key == ' ':
                     break
+                elif key.lower() == 'p':
+                    handle_pause()
+                    display_card(word, False, correct_count, incorrect_count, remaining)
                 elif check_for_quit(key):
                     show_final_score(correct_count, incorrect_count)
                     return
 
+            # Show answer
             display_card(word, True, correct_count, incorrect_count, remaining)
 
             while True:
@@ -1279,17 +1352,87 @@ def run_quiz(words, selected_groups, results_path, mistake_mode=None, all_result
                 if key == ' ':
                     correct_count += 1
                     save_result(results_path, word, True, session_id, selected_groups)
-                    if streak_needed > 1:
-                        repeat_words[word['pinyin']] = (word, streak_needed - 1, 0)
+
+                    if needed_correct > 1:
+                        insert_pos = position + random.randint(5, 10)
+                        repeat_words[word['pinyin']] = (word, needed_correct - 1, insert_pos)
                     break
+                elif key.lower() == 'p':
+                    handle_pause()
+                    display_card(word, True, correct_count, incorrect_count, remaining)
                 elif key.lower() == 'x':
                     incorrect_count += 1
                     save_result(results_path, word, False, session_id, selected_groups)
-                    repeat_words[word['pinyin']] = (word, 2, 0)
+
+                    insert_pos = position + random.randint(5, 10)
+                    repeat_words[word['pinyin']] = (word, 2, insert_pos)
+                    # Refresh display to show updated remaining count
+                    remaining = calc_remaining()
+                    display_card(word, True, correct_count, incorrect_count, remaining)
                     break
                 elif check_for_quit(key):
                     show_final_score(correct_count, incorrect_count)
                     return
+
+            position += 1
+
+        # Process remaining repeat words
+        while repeat_words:
+            pending = [(w, streak) for w, streak, _ in repeat_words.values()]
+            repeat_words.clear()
+
+            for idx, (word, streak_needed) in enumerate(pending):
+                # Calculate remaining: current word's streak + remaining pending + any new repeats
+                pending_after = sum(s for _, s in pending[idx+1:])
+                new_repeats = sum(streak for _, streak, _ in repeat_words.values())
+                remaining = streak_needed + pending_after + new_repeats
+
+                display_card(word, False, correct_count, incorrect_count, remaining)
+
+                while True:
+                    key = get_key()
+                    if key is None:
+                        continue  # Ignore escape sequences
+                    if key == ' ':
+                        break
+                    elif key.lower() == 'p':
+                        handle_pause()
+                        display_card(word, False, correct_count, incorrect_count, remaining)
+                    elif check_for_quit(key):
+                        show_final_score(correct_count, incorrect_count)
+                        return
+
+                display_card(word, True, correct_count, incorrect_count, remaining)
+
+                while True:
+                    key = get_key()
+                    if key is None:
+                        continue  # Ignore escape sequences
+                    if key == ' ':
+                        correct_count += 1
+                        save_result(results_path, word, True, session_id, selected_groups)
+                        if streak_needed > 1:
+                            repeat_words[word['pinyin']] = (word, streak_needed - 1, 0)
+                        break
+                    elif key.lower() == 'p':
+                        handle_pause()
+                        display_card(word, True, correct_count, incorrect_count, remaining)
+                    elif key.lower() == 'x':
+                        incorrect_count += 1
+                        save_result(results_path, word, False, session_id, selected_groups)
+                        repeat_words[word['pinyin']] = (word, 2, 0)
+                        # Refresh display to show updated remaining count
+                        pending_after = sum(s for _, s in pending[idx+1:])
+                        new_repeats = sum(streak for _, streak, _ in repeat_words.values())
+                        remaining = pending_after + new_repeats
+                        display_card(word, True, correct_count, incorrect_count, remaining)
+                        break
+                    elif check_for_quit(key):
+                        show_final_score(correct_count, incorrect_count)
+                        return
+    except SystemExit:
+        # Clean exit from pause handler
+        return
 
     # Quiz complete
     show_final_score(correct_count, incorrect_count, complete=True)
@@ -1493,27 +1636,45 @@ def main():
         elif choice == 'pm':
             run_practice(words, [], results_path, mistake_mode='month', all_results=results)
         elif choice.startswith('p') and len(choice) > 1:
-            # Practice specific group (e.g., 'p3' for group 3)
-            try:
-                group_num = int(choice[1:])
-                if group_num in groups:
-                    run_practice(words, [group_num], results_path)
-                else:
-                    print(f"  Invalid group: {group_num}")
+            # Practice specific group(s)
+            rest = choice[1:].strip()
+            if rest == 'd':
+                run_practice(words, [], results_path, mistake_mode='day', all_results=results)
+            elif rest == 'w':
+                run_practice(words, [], results_path, mistake_mode='week', all_results=results)
+            elif rest == 'm':
+                run_practice(words, [], results_path, mistake_mode='month', all_results=results)
+            else:
+                # Parse group numbers (e.g., 'p3' or 'p 1 2 3')
+                try:
+                    group_nums = [int(x) for x in rest.split()]
+                    invalid = [g for g in group_nums if g not in groups and g != 0]
+                    if invalid:
+                        print(f"  Invalid group(s): {invalid}")
+                        input("  Press Enter to continue...")
+                    elif 0 in group_nums:
+                        run_practice(words, [0], results_path)
+                    else:
+                        run_practice(words, group_nums, results_path)
+                except ValueError:
+                    print("  Invalid input. Use 'p' followed by group number(s) (e.g., 'p3' or 'p 1 2 3').")
                     input("  Press Enter to continue...")
-            except ValueError:
-                print("  Invalid input. Use 'p' followed by group number (e.g., 'p3').")
-                input("  Press Enter to continue...")
         else:
+            # Parse group numbers (single or multiple space-separated)
             try:
-                group_num = int(choice)
-                if group_num == 0:
-                    run_quiz(words, [0], results_path)
-                elif group_num in groups:
-                    run_quiz(words, [group_num], results_path)
-                else:
-                    print(f"  Invalid group: {group_num}")
+                group_nums = [int(x) for x in choice.split()]
+                if not group_nums:
+                    print("  Invalid input. Please enter a number or letter option.")
                     input("  Press Enter to continue...")
+                    continue
+                invalid = [g for g in group_nums if g not in groups and g != 0]
+                if invalid:
+                    print(f"  Invalid group(s): {invalid}")
+                    input("  Press Enter to continue...")
+                elif 0 in group_nums:
+                    run_quiz(words, [0], results_path)
+                else:
+                    run_quiz(words, group_nums, results_path)
             except ValueError:
                 print("  Invalid input. Please enter a number or letter option.")
                 input("  Press Enter to continue...")
